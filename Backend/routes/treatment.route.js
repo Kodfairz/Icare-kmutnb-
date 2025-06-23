@@ -3,29 +3,16 @@ import { PrismaClient } from '@prisma/client'; // นำเข้า PrismaClien
 
 const prisma = new PrismaClient(); // สร้าง Prisma client instance
 
-// สร้าง router สำหรับเส้นทาง /medic
+// สร้าง router สำหรับเส้นทาง /treatments
 export const TreatmentsRoutes = new Elysia({ prefix: "/treatments" })
 
-// GET /treatments
-    .get("/:id", async ({ params }) => {
-        const treatments = await prisma.treatments.findFirst({
-            where: {
-                TreatmentID: Number(params.id)
-            }
-        })
-
-        if(!treatments) throw new Error("ไม่สามารถเรียกข้อมูลได้");
-
-        return { "resultData" : treatments };
-    })
-
-// GET /treatments
+// GET /treatments 
     .get("/diseases/:id", async ({ params }) => {
         const treatments = await prisma.disease_treatments.findMany({
             where: {
-                DiseaseID: Number(params.id)
+                DiseaseID: Number(params.id) // ดึงข้อมูลการรักษาที่เกี่ยวข้องกับโรคที่ระบุ โดยใช้ ID ของโรค ตาม ที่ระบุใน params
             },
-            include: {
+            include: { //ทำการรวมข้อมูลการรักษาและโรคที่เกี่ยวข้องเพื่อมาแสดงผล
                 treatments: true,
                 diseases: true,
             }
@@ -36,23 +23,23 @@ export const TreatmentsRoutes = new Elysia({ prefix: "/treatments" })
         return { "resultData" : treatments };
     })
 
-// POST /diseases/treatments
+// POST /diseases/treatments //เพิ่มข้อมูลการรักษาโรคใหม่
     .post("/", async ({ body }) => {
         const treatments = await prisma.treatments.create({
             data: {
-                TreatmentName: body.treatment_name,
-                Description: body.description,
-                Procedures: body.procedure,
-                Duration: body.duration,
-                SideEffects: body.side_effect ? body.side_effect : "-",
-                Contraindications: body.contraindication ? body.contraindication : "-",
+                TreatmentName: body.treatment_name, //เพื่อเก็บข้อมูลชื่อการรักษาโรค
+                Description: body.description, //เพื่อเก็บข้อมูลรายละเอียดการรักษา
+                Procedures: body.procedure, //เพื่อเก็บข้อมูลขั้นตอนการรักษา
+                Duration: body.duration, //เพื่อเก็บข้อมูลระยะเวลาการรักษา
+                SideEffects: body.side_effect ? body.side_effect : "-", //เพื่อเก็บข้อมูลผลข้างเคียงของการรักษา
+                Contraindications: body.contraindication ? body.contraindication : "-", //เพื่อเก็บข้อมูลข้อห้ามใช้การรักษา
             }
         })
 
         const diseaseTreatment = await prisma.disease_treatments.create({
             data: {
-                DiseaseID: Number(body.disease_id),
-                TreatmentID: treatments.TreatmentID,
+                DiseaseID: Number(body.disease_id), //เพื่อเก็บข้อมูล ID ของโรคที่เกี่ยวข้องกับการรักษา
+                TreatmentID: treatments.TreatmentID, //เพื่อเก็บข้อมูล ID ของการรักษาที่เกี่ยวข้องกับโรค
             }
         })
 
@@ -61,19 +48,32 @@ export const TreatmentsRoutes = new Elysia({ prefix: "/treatments" })
         return { "resultData" : treatments };
     })
 
-// PUT /diseases/treatments/:id
+    // GET /treatments ดึงข้อมูลการรักษาทั้งหมดในส่วนแก้ไข
+    .get("/:id", async ({ params }) => {
+        const treatments = await prisma.treatments.findFirst({
+            where: {
+                TreatmentID: Number(params.id) // ดึงข้อมูลในแต่ละแถว เพื่อ นำมาแก้ไข ใน ID ของการรักษา ตามที่ระบุใน params
+            }
+        })
+
+        if(!treatments) throw new Error("ไม่สามารถเรียกข้อมูลได้");
+
+        return { "resultData" : treatments };
+    })
+
+// PUT /diseases/treatments/:id แก้ไขข้อมูลการรักษาโรคตาม ID ที่ระบุ
     .put("/:id", async ({ params, body }) => {
         const treatments = await prisma.treatments.update({
             where: {
-                TreatmentID: Number(params.id)
+                TreatmentID: Number(params.id) // แปลง ID ที่รับมาจาก params เพื่อค้นหาข้อมูลการรักษาที่ต้องการแก้ไข
             },
             data: {
-                TreatmentName: body.treatment_name,
-                Description: body.description,
-                Procedures: body.procedure,
-                Duration: body.duration,
-                SideEffects: body.side_effect,
-                Contraindications: body.contraindication,
+                TreatmentName: body.treatment_name, //เพื่อเก็บข้อมูลชื่อการรักษาโรค
+                Description: body.description, //เพื่อเก็บข้อมูลรายละเอียดการรักษา
+                Procedures: body.procedure, //เพื่อเก็บข้อมูลขั้นตอนการรักษา
+                Duration: body.duration, //เพื่อเก็บข้อมูลระยะเวลาการรักษา
+                SideEffects: body.side_effect, //เพื่อเก็บข้อมูลผลข้างเคียงของการรักษา
+                Contraindications: body.contraindication, //เพื่อเก็บข้อมูลข้อห้ามใช้การรักษา
             }
         })
 
@@ -86,7 +86,7 @@ export const TreatmentsRoutes = new Elysia({ prefix: "/treatments" })
     .delete("/:id", async ({ params }) => {
         const treatments = await prisma.treatments.delete({
             where: {
-                TreatmentID: Number(params.id)
+                TreatmentID: Number(params.id) // แปลง ID ที่รับมาจาก params เพื่อค้นหาข้อมูลการรักษาที่ต้องการลบ
             }
         })
 

@@ -6,10 +6,11 @@ import { toast } from "react-toastify";
 import axios from "axios";
 import { API } from "../../../../service/api";
 
-const Video = () => {
+const Video = () => { 
+  // เป็นคอมโพเนนต์ที่ใช้สำหรับแสดงรายละเอียดของวิดีโอ
   const { id } = useParams();
   const router = useRouter();
-
+  // ใช้ useParams เพื่อดึง id ของวิดีโอจาก URL
   const [video, setVideo] = useState(null);
   const [fadeIn, setFadeIn] = useState(false);
   const [visibleDetails, setVisibleDetails] = useState(false);
@@ -17,7 +18,7 @@ const Video = () => {
 
   const getVideoById = async () => {
     try {
-      const response = await axios.get(`${API}/video/${id}`);
+      const response = await axios.get(`${API}/video/user/${id}`);
       setVideo(response.data.resultData);
       setFadeIn(true);
     } catch (error) {

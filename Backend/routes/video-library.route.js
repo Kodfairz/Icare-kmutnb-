@@ -6,7 +6,7 @@ const prisma = new PrismaClient(); // สร้าง Prisma client instance
 // สร้าง router สำหรับเส้นทาง /medic
 export const VideoRoutes = new Elysia({ prefix: "/videos" })
 
-// GET /videos
+// GET /videos นำมาแสดงทั้งหมด
     .get("/", async () => {
         const videos = await prisma.videolibrary.findMany()
 
@@ -15,11 +15,11 @@ export const VideoRoutes = new Elysia({ prefix: "/videos" })
         return { "resultData" : videos };
     })
 
-// GET /videos/:id
+// GET /videos/:id ส่วนนี้ใช้เพื่อดึงข้อมูลวิดีโอตาม ID ที่ระบุ เพื่อนำมาแก้ไขหรือนำไปแสดงผล
     .get("/:id", async ({ params }) => {
         const video = await prisma.videolibrary.findFirst({
             where: {
-                VideoID: Number(params.id)
+                VideoID: Number(params.id) // แปลง ID ที่รับมาจาก params เพื่อค้นหาข้อมูลวิดีโอ
             }
         })
 
@@ -44,8 +44,8 @@ export const VideoRoutes = new Elysia({ prefix: "/videos" })
 
         const newVideo = await prisma.videolibrary.create({
             data: {
-                VideoName: body.video_name,
-                VideoURL: body.video_url,
+                VideoName: body.video_name, //เพื่อเก็บชื่อวิดีโอ
+                VideoURL: body.video_url, //เพื่อเก็บ URL ของวิดีโอ
             }
         })
 
@@ -58,7 +58,7 @@ export const VideoRoutes = new Elysia({ prefix: "/videos" })
     .put("/:id", async ({ params, body }) => {
         const video = await prisma.videolibrary.update({
             where: {
-                VideoID: Number(params.id)
+                VideoID: Number(params.id) // แปลง ID ที่รับมาจาก params เพื่อค้นหาข้อมูลวิดีโอตามตาราง
             },
             data: {
                 VideoName: body.video_name,
@@ -75,7 +75,7 @@ export const VideoRoutes = new Elysia({ prefix: "/videos" })
     .delete("/:id", async ({ params }) => {
         const video = await prisma.videolibrary.delete({
             where: {
-                VideoID: Number(params.id)
+                VideoID: Number(params.id) // แปลง ID ที่รับมาจาก params เพื่อค้นหาข้อมูลวิดีโอที่ต้องการลบ
             }
         })
 

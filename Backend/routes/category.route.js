@@ -8,7 +8,10 @@ export const categoryRoutes = new Elysia({ prefix : "/category" })
 
     // GET /category - ดึงข้อมูลประเภทโรคทั้งหมด
     .get("/", async () => {
-        const categories = await prisma.categories.findMany({}) // ดึงข้อมูลทั้งหมดจากตาราง categories
+        const categories = await prisma.categories.findMany({}) // ดึงข้อมูลทั้งหมดจากตาราง categories จากฐานข้อมูล
+        if(!categories) {
+            throw new Error("ไม่สามารถเรียกข้อมูลประเภทโรคได้")
+        }
 
         return {
             "resultData" : categories
@@ -30,8 +33,8 @@ export const categoryRoutes = new Elysia({ prefix : "/category" })
 
         // สร้างข้อมูล category ใหม่
         const newCategory = await prisma.categories.create({
-            data : {
-                CategoryName : body.CategoryName
+            data : { // ข้อมูลที่ต้องการสร้าง
+                CategoryName : body.CategoryName // ชื่อประเภทโรคที่รับมาจาก body 
             }
         })
         
@@ -45,11 +48,11 @@ export const categoryRoutes = new Elysia({ prefix : "/category" })
     })
 
     // PUT /category/:id - แก้ไขข้อมูลประเภทโรคตาม ID
-    .put("/:id", async ({ body, params }) => {
-        // ตรวจสอบว่ามี category ตาม ID หรือไม่
+    .put("/:id", async ({ body, params }) => { // ทำการแก้ไขข้อมูลประเภทโรคตาม ID ที่ระบุใน params
+        
         const category = await prisma.categories.findFirst({
             where : {
-                CategoryID : Number(params.id)
+                CategoryID : Number(params.id) // ตรวจสอบว่ามี category ตาม ID ว่ามีอยู่หรือไม่
             }
         })
 
@@ -60,10 +63,10 @@ export const categoryRoutes = new Elysia({ prefix : "/category" })
         // แก้ไขข้อมูล category
         const editCategory = await prisma.categories.update({
             where : {
-                CategoryID : Number(params.id),
+                CategoryID : Number(params.id), // ใช้ ID ที่ระบุใน params เพื่อค้นหา category ที่ต้องการแก้ไข
             },
             data : {
-                CategoryName : body.CategoryName
+                CategoryName : body.CategoryName // ชื่อประเภทโรคที่รับมาจาก body เมื่อมีการแก้ไข จะถูกอัพเดต ไปไว้ในฐานข้อมูล CategoryName
             }
         })
 
@@ -81,7 +84,7 @@ export const categoryRoutes = new Elysia({ prefix : "/category" })
         // ตรวจสอบว่ามี category ตาม ID หรือไม่
         const category = await prisma.categories.findFirst({
             where : {
-                CategoryID : Number(params.id)
+                CategoryID : Number(params.id) // ใช้ ID ที่ระบุใน params เพื่อค้นหา category ที่ต้องการลบ
             },
         })
 
@@ -92,7 +95,7 @@ export const categoryRoutes = new Elysia({ prefix : "/category" })
         // ลบ category
         const deleteCategory = await prisma.categories.delete({
             where : {
-                CategoryID : Number(params.id)
+                CategoryID : Number(params.id) // ใช้ ID ที่ระบุใน params เพื่อค้นหา category ที่ต้องการลบ
             }
         })
 
@@ -105,11 +108,11 @@ export const categoryRoutes = new Elysia({ prefix : "/category" })
         }
     })
 
-    // GET /category/:id - ดึงข้อมูลประเภทโรคตาม ID
+    // GET /category/:id - ดึงข้อมูลประเภทโรคตาม ID ในส่วนแก้ไข
     .get("/:id", async ({ params }) => {
         const category = await prisma.categories.findFirst({
             where : {
-                CategoryID : Number(params.id)
+                CategoryID : Number(params.id) // ดึง ID ที่รับมาจาก params เพื่อค้นหาข้อมูลประเภทโรคที่ต้องการ
             }
         })
 

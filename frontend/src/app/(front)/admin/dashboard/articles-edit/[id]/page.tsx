@@ -60,7 +60,7 @@ export default function ArticleEdit() {
   const columns = useMemo(
     () => [
       {
-        header: "#",
+        header: "ID",
         accessorKey: "EditID", // แสดง id ของข้อมูลยา
       },
       {

@@ -74,7 +74,7 @@ export default function AdminList() {
     const fetchAdminsData = async () => {
         try {
             const response = await axios.get(`${API}/users`);
-            setAdminList(response.data); // เก็บข้อมูลใน state
+            setAdminList(response.data.resultData); // เก็บข้อมูลใน state
         } catch (error) {
             console.log(error);
             toast.error("Failed to fetch admins"); // แจ้งเตือนเมื่อมีข้อผิดพลาด

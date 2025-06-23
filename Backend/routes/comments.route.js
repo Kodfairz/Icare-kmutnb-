@@ -12,7 +12,7 @@ export const commentRoutes = new Elysia({ prefix : "/comments" })
         const comment = await prisma.feedbacks.create({
             data : {
                 FeedbackText : body.value, // ใส่ค่าข้อความความคิดเห็น
-                HealthArticleID : body.id
+                HealthArticleID : body.id // ใส่ ID ของบทความสุขภาพที่เกี่ยวข้อง
             }
         })
 
@@ -33,9 +33,9 @@ export const commentRoutes = new Elysia({ prefix : "/comments" })
                 CreatedAt: 'desc' // เรียงตามเวลาสร้างล่าสุด
             },
             include: {
-                healtharticles: {
+                healtharticles: { // รวมข้อมูลบทความสุขภาพที่เกี่ยวข้อง
                     include: {
-                        diseases: true
+                        diseases: true // รวมข้อมูลโรคที่เกี่ยวข้องกับบทความ
                     }
                 }
             }

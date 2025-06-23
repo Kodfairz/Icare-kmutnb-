@@ -8,9 +8,16 @@ const prisma = new PrismaClient();
 // สร้าง routes สำหรับจัดการข้อมูลผู้ใช้ โดยใช้ prefix /users
 export const userRoutes = new Elysia({ prefix: "/users" })
 
-    // ดึงผู้ใช้ทั้งหมด
+    // ดึงผู้ใช้ทั้งหมด หน้าแรก
     .get('/', async () => {
-        return await prisma.admins.findMany();
+
+        const admin = await prisma.admins.findMany();
+        if (!admin) {
+            throw new Error("ไม่พบผู้ใช้งาน");
+        }
+        return {
+            "resultData": admin
+        };
     })
 
     // สมัครผู้ใช้ใหม่
@@ -27,7 +34,7 @@ export const userRoutes = new Elysia({ prefix: "/users" })
             throw new Error("มีผู้ใช้งานนี้แล้ว");
         }
 
-        // เข้ารหัสรหัสผ่านก่อนบันทึก
+        // เข้ารหัสรหัสผ่านก่อนบันทึก hash password
         const password = bcrypt.hashSync(body.password, 10);
 
         // สร้างผู้ใช้ใหม่
@@ -58,14 +65,14 @@ export const userRoutes = new Elysia({ prefix: "/users" })
             throw new Error("ผู้ใช้ปิดใช้งาน");
         }
 
-        // ตรวจสอบความถูกต้องของรหัสผ่าน
+        // ตรวจสอบความถูกต้องของรหัสผ่าน นำมาเทียบกับรหัสผ่านที่เก็บไว้ในฐานข้อมูล
         const isPasswordMatch = bcrypt.compareSync(body.password, admin.Password);
 
         if (!isPasswordMatch) {
             throw new Error("รหัสผ่านไม่ถูกต้อง");
         }
 
-        // สร้าง JWT token เพื่อส่งกลับไปให้ client
+        // สร้าง JWT token เพื่อส่งกลับไปให้ client เพื่อทำการบอก seession ของผู้ใช้ หมดอายุ
         const token = jwt.sign({
             data: {
                 "username": admin.AdminName,
@@ -74,7 +81,7 @@ export const userRoutes = new Elysia({ prefix: "/users" })
             }
         }, 'secret', { expiresIn: '24h' }); // หมายเหตุ: ควรใช้ secret จาก .env
 
-        // ส่ง token และข้อมูลผู้ใช้กลับ
+        // ส่ง token และข้อมูลผู้ใช้กลับไป เพื่อนำไปเก็บไว้ใน cookie
         return {
             "token": token,
             "resultData": {
@@ -90,7 +97,7 @@ export const userRoutes = new Elysia({ prefix: "/users" })
         // ตรวจสอบว่าผู้ใช้มีอยู่จริงหรือไม่
         const admin = await prisma.admins.findFirst({
             where: {
-                AdminID: Number(params.id)
+                AdminID: Number(params.id) // แปลง ID ที่รับมาจาก params เพื่อไปหา
             }
         });
 
@@ -101,10 +108,10 @@ export const userRoutes = new Elysia({ prefix: "/users" })
         // อัปเดตชื่อผู้ใช้
         const updateAdmin = await prisma.admins.update({
             where: {
-                AdminID: Number(params.id)
+                AdminID: Number(params.id) // แปลง ID ที่รับมาจาก params เพื่อนำไปอัปเดต
             },
             data: {
-                AdminName: body.username
+                AdminName: body.username // นำ username ที่รับมาจาก body ไปอัปเดตในฐานข้อมูล ชื่อ AdminName
             }
         });
 
@@ -122,27 +129,27 @@ export const userRoutes = new Elysia({ prefix: "/users" })
         // ค้นหาผู้ใช้ตาม id
         const admin = await prisma.admins.findFirst({
             where: {
-                AdminID: Number(params.id)
+                AdminID: Number(params.id) // แปลง ID ที่รับมาจาก params เพื่อไปหา
             }
         });
 
-        // ตรวจสอบรหัสผ่านเดิมว่าตรงหรือไม่
+        // ตรวจสอบรหัสผ่านเดิมว่าตรงหรือไม่ 
         const isPasswordMatch = bcrypt.compareSync(body.oldPassword, admin.Password);
 
         if (!isPasswordMatch) {
             throw new Error("รหัสผ่านเดิมไม่ถูกต้อง");
         }
 
-        // เข้ารหัสรหัสผ่านใหม่
+        // เข้ารหัสรหัสผ่านใหม่ hash password
         const newPassword = bcrypt.hashSync(body.newPassword, 10);
 
         // อัปเดตรหัสผ่านใหม่
         const updateUser = await prisma.admins.update({
             where: {
-                AdminID: Number(params.id)
+                AdminID: Number(params.id) // แปลง ID ที่รับมาจาก params เพื่อนำไปอัปเดต
             },
             data: {
-                Password: newPassword
+                Password: newPassword //นำnewPassword ที่เข้ารหัสแล้วไปอัปเดต ในฐานข้อมูล Password
             }
         });
 
@@ -159,7 +166,7 @@ export const userRoutes = new Elysia({ prefix: "/users" })
     .patch("/status/:id", async ({ params }) => {
         const admin = await prisma.admins.findFirst({
             where: {
-                AdminID: Number(params.id)
+                AdminID: Number(params.id) // แปลง ID ที่รับมาจาก params เพื่อไปหา
             }
         });
 
@@ -170,10 +177,10 @@ export const userRoutes = new Elysia({ prefix: "/users" })
         // toggle ค่าสถานะ
         const updateAdmin = await prisma.admins.update({
             where: {
-                AdminID: Number(params.id)
+                AdminID: Number(params.id) // แปลง ID ที่รับมาจาก params เพื่อนำไปอัปเดต
             },
             data: {
-                isActive: !admin.isActive
+                isActive: !admin.isActive //นำสถานะปัจจุบันมาเปลี่ยนเป็นตรงข้าม เพื่อไปเก็บไว้ใน ฐานข้อมูล isActive
             }
         });
 
@@ -190,7 +197,7 @@ export const userRoutes = new Elysia({ prefix: "/users" })
     .delete("/:id", async ({ params }) => {
         const admin = await prisma.admins.findFirst({
             where: {
-                AdminID: Number(params.id)
+                AdminID: Number(params.id) // แปลง ID ที่รับมาจาก params เพื่อไปหา
             }
         });
 
@@ -200,7 +207,7 @@ export const userRoutes = new Elysia({ prefix: "/users" })
 
         const deleteAdmin = await prisma.admins.delete({
             where: {
-                AdminID: Number(params.id)
+                AdminID: Number(params.id) // แปลง ID ที่รับมาจาก params เพื่อนำไปลบ
             }
         });
 
@@ -213,11 +220,11 @@ export const userRoutes = new Elysia({ prefix: "/users" })
         };
     })
 
-    // ดึงข้อมูลผู้ใช้รายบุคคล
+    // ดึงข้อมูลผู้ใช้รายบุคคล ในส่วนแก้ไขข้อมูลผู้ใช้
     .get("/:id", async ({ params }) => {
         const admin = await prisma.admins.findFirst({
             where: {
-                AdminID: Number(params.id)
+                AdminID: Number(params.id) // แปลง ID ที่รับมาจาก params เพื่อไปหา
             }
         });
 

@@ -116,6 +116,8 @@ export default function AddMedicationPage() {
               <option value="ฉีด">ฉีด</option>
               <option value="ดม">ดม</option>
               <option value="ทา">ทา</option>
+              <option value="พ่น">พ่น</option>
+              <option value="ผง">ผง</option>
             </select>
           </div>
 
