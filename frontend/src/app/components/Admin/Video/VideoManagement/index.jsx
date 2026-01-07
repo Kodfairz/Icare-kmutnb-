@@ -16,6 +16,7 @@ import dayjs from "dayjs"; // ไลบรารีจัดการวัน�
 import relativeTime from "dayjs/plugin/relativeTime"; // plugin ของ dayjs แสดงเวลาสัมพัทธ์ เช่น "3 ชั่วโมงที่แล้ว"
 import "dayjs/locale/th"; // ภาษาไทยของ dayjs
 import Switch from "react-switch"; // switch component สำหรับ toggle สถานะ
+import { getAdminData } from "../../../../lib/getAdminData";
 
 const VideoManagement = () => {
   const router = useRouter(); // ใช้สำหรับการนำทางภายในแอป
@@ -24,6 +25,8 @@ const VideoManagement = () => {
 
   // สเตทเก็บรายการวิดีโอที่โหลดมา
   const [videos, setVideos] = useState([]);
+  // สเตทเก็บข้อมูลแอดมิน
+  const [adminData, setAdminData] = useState(null);
   // สเตทสำหรับเปิด/ปิด modal ยืนยันลบ
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   // สเตทเก็บ id ของวิดีโอที่เลือกจะลบ
@@ -47,12 +50,21 @@ const VideoManagement = () => {
   // ดึงข้อมูลโพสต์ครั้งแรกตอน component โหลด
   useEffect(() => {
     getVideos();
+
+    const loadAdmin = async () => {
+      const data = await getAdminData();
+      setAdminData(data);
+    };
+
+    loadAdmin();
   }, []);
 
   // ฟังก์ชันลบวิดีโอโดย id
   const deleteVideo = async (id) => {
     try {
-      const response = await axios.delete(`${API}/video/${id}`); // เรียก API ลบ
+      const response = await axios.delete(`${API}/video/${id}`, {
+        data: { admin_id: adminData.id } // ส่ง admin_id ไปเพื่อตรวจสอบสิทธิ์การลบ
+      }); // เรียก API ลบ
       toast.success(response.data.message || "ลบวิดีโอสำเร็จ"); // แจ้งเตือนสำเร็จ
       getVideos(); // โหลดข้อมูลใหม่หลังลบเสร็จ
     } catch (error) {
@@ -142,47 +154,63 @@ const VideoManagement = () => {
       {
         header: "สถานะ",
         // แสดง switch toggle สำหรับเปิด/ปิดสถานะวิดีโอ
-        cell: ({ row }) => (
-          <div className="flex items-center gap-4">
-            <Switch
-              checked={row.original.isActive} // สถานะเปิด/ปิด
-              onChange={() =>
-                changeStatusVideo(row.original.VideoArticleID, !row.original.isActive) // เปลี่ยนสถานะเมื่อสวิตช์ถูกคลิก
-              }
-              offColor="#888" // สี background เมื่อปิด
-              onColor="#4CAF50" // สี background เมื่อเปิด (เขียว)
-              offHandleColor="#FFF" // สีปุ่มสวิตช์เมื่อปิด
-              onHandleColor="#FFF" // สีปุ่มสวิตช์เมื่อเปิด
-              height={30}
-              width={60}
-            />
-          </div>
-        ),
+        cell: ({ row }) => {
+          const canEdit = Boolean(
+            adminData && (adminData.role === "SuperAdmin" || Number(adminData.id) === Number(row.original.AdminID) )
+          );
+
+          return (
+            <div className="flex items-center gap-4">
+              <Switch
+                checked={row.original.isActive} // สถานะเปิด/ปิด
+                onChange={() =>
+                  changeStatusVideo(row.original.VideoArticleID, !row.original.isActive) // เปลี่ยนสถานะเมื่อสวิตช์ถูกคลิก
+                }
+                disabled={!canEdit}
+                offColor="#888" // สี background เมื่อปิด
+                onColor="#4CAF50" // สี background เมื่อเปิด (เขียว)
+                offHandleColor="#FFF" // สีปุ่มสวิตช์เมื่อปิด
+                onHandleColor="#FFF" // สีปุ่มสวิตช์เมื่อเปิด
+                height={30}
+                width={60}
+              />
+            </div>
+          );
+        },
       },
       {
         header: "จัดการ",
+        id: "actions",
         // ปุ่มแก้ไขและลบวิดีโอ
-        cell: ({ row }) => (
-          <div className="flex gap-2">
-            <button
-              onClick={() =>
-                router.push(`/admin/dashboard/edit-video/${row.original.VideoArticleID}`) // นำทางไปหน้าจอแก้ไขวิดีโอ
-              }
-              className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
-            >
-              แก้ไข
-            </button>
-            <button
-              onClick={() => openConfirmModal(row.original.VideoArticleID)} // เปิด modal ยืนยันลบ
-              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-            >
-              ลบ
-            </button>
-          </div>
-        ),
+        cell: ({ row }) => {
+          const canEdit = Boolean(
+            adminData && (adminData?.role === "SuperAdmin" || Number(adminData?.id) === Number(row.original.AdminID))
+          );
+
+          return (
+            <div className="flex gap-2">
+              <button
+                onClick={() =>
+                  router.push(`/admin/dashboard/edit-video/${row.original.VideoArticleID}`) // นำทางไปหน้าจอแก้ไขวิดีโอ
+                }
+                disabled={!canEdit}
+                className={`px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 ${!canEdit ? "opacity-50 pointer-events-none" : ""}`}
+              >
+                แก้ไข
+              </button>
+              <button
+                onClick={() => openConfirmModal(row.original.VideoArticleID)} // เปิด modal ยืนยันลบ
+                disabled={!canEdit}
+                className={`px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 ${!canEdit ? "opacity-50 pointer-events-none" : ""}`}
+              >
+                ลบ
+              </button>
+            </div>
+          );
+        },
       },
     ],
-    [router]
+    [router, adminData]
   );
 
   // สร้างตารางด้วย react-table โดยส่งข้อมูลและคอลัมน์เข้าไป

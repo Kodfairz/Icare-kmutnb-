@@ -40,6 +40,7 @@ import Switch from "react-switch"; // นำเข้าคอมโพเนน
 // นำเข้า Switch component สำหรับสวิตช์เปิด/ปิด
 
 import ModalConfirm from "../../../ModalConfirm";  // เพิ่ม import ModalConfirm
+import { getAdminData } from "../../../../lib/getAdminData";
 // นำเข้า ModalConfirm สำหรับ modal ยืนยันการลบข้อมูล
 
 export default function BlogManagement() {
@@ -51,6 +52,8 @@ export default function BlogManagement() {
 
   const [userId, setUserId] = useState(null);
   // สถานะเก็บ id ของผู้ใช้ที่ล็อกอินอยู่
+
+  const [adminData, setAdminData] = useState(null);
 
   const [posts, setPosts] = useState([]);
   // สถานะเก็บข้อมูลโพสต์ที่ดึงมาจาก API
@@ -83,6 +86,13 @@ export default function BlogManagement() {
     };
 
     fetchUserId();
+
+    const loadAdmin = async () => {
+      const data = await getAdminData();
+      setAdminData(data);
+    };
+
+    loadAdmin();
   }, []);
 
   // ฟังก์ชันดึงข้อมูลโพสต์จาก API
@@ -100,17 +110,22 @@ export default function BlogManagement() {
 
   // ดึงข้อมูลโพสต์ครั้งแรกตอน component โหลด
   useEffect(() => {
-    if (userId) {
-      getPosts();
-    }
-  }, [userId]);
+    getPosts();
+
+    const loadAdmin = async () => {
+      const data = await getAdminData();
+      setAdminData(data);
+    };
+
+    loadAdmin();
+  }, []);
 
   // ฟังก์ชันเปลี่ยนสถานะเปิด/ปิดโพสต์ (isActive)
   const changeStatus = async (id, status) => {
     try {
       const response = await axios.patch(`${API}/posts/change-status/${id}`, {
         isActive: status,
-        admin_id: userId
+        admin_id: Number(adminData.id)
       });
 
       toast.success(response.data.message || "เปลี่ยนสถานะสำเร็จแล้ว");
@@ -124,7 +139,9 @@ export default function BlogManagement() {
   // ฟังก์ชันลบโพสต์ตาม id ที่เลือกไว้
   const deletePost = async () => {
     try {
-      const response = await axios.delete(`${API}/posts/${postIdToDelete}`);
+      const response = await axios.delete(`${API}/posts/${postIdToDelete}`, {
+        data: { admin_id: adminData.id } // ส่ง admin_id ไปเพื่อตรวจสอบสิทธิ์การลบ
+      });
       toast.success(response.data.message || "ลบข้อมูลสำเร็จแล้ว");
       getPosts(); // ดึงข้อมูลใหม่หลังลบเสร็จ
       setIsModalOpen(false); // ปิด modal confirm
@@ -201,30 +218,37 @@ export default function BlogManagement() {
       },
       {
         header: "สถานะ",
-        cell: ({ row }) => (
-          <>
-            {/* สวิตช์เปิด/ปิดสถานะโพสต์ */}
-            <div className="flex items-center gap-4">
-              <Switch
-                checked={row.original.isActive}
-                onChange={() =>
-                  changeStatus(row.original.HealthArticleID, !row.original.isActive)
-                }
-                offColor="#888"
-                onColor="#4CAF50"
-                offHandleColor="#FFF"
-                onHandleColor="#FFF"
-                height={30}
-                width={60}
-              />
-            </div>
-          </>
-        ),
+        cell: ({ row }) => {
+            const canEdit = Boolean(
+              adminData && (adminData.role === "SuperAdmin" || (Number(adminData.id) === Number(row.original.AdminID)))
+            )
+
+            return (
+              <div className="flex items-center gap-4">
+                {/* สวิตช์เปิด/ปิดสถานะโพสต์ */}
+                <Switch
+                  checked={row.original.isActive}
+                  onChange={() =>
+                    changeStatus(row.original.HealthArticleID, !row.original.isActive)
+                  }
+                  disabled={!canEdit}
+                  offColor="#888"
+                  onColor="#4CAF50"
+                  offHandleColor="#FFF"
+                  onHandleColor="#FFF"
+                  height={30}
+                  width={60}
+                />
+              </div>
+            );
+        },
       },
       {
         header: "จัดการ",
         cell: ({ row }) => {
-          const isDisabled = row.original.AdminID !== userId;
+          const canEdit = Boolean(
+            adminData && (adminData.role === "SuperAdmin" || (Number(adminData.id) === Number(row.original.AdminID)))
+          )
 
           return (
             <div className="flex gap-2">
@@ -233,12 +257,7 @@ export default function BlogManagement() {
                 onClick={() =>
                   router.push(`/admin/dashboard/medic-treatment/${row.original.diseases.DiseaseID}`)
                 }
-                disabled={isDisabled}
-                className={`px-4 py-2 rounded-lg text-white ${
-                  isDisabled
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-sky-500 hover:bg-sky-600"
-                }`}
+                className="px-4 py-2 rounded-lg text-white bg-sky-500 hover:bg-sky-600"
               >
                 ดูข้อมูลยา/รักษา
               </button>
@@ -248,11 +267,11 @@ export default function BlogManagement() {
                 onClick={() =>
                   router.push(`/admin/dashboard/edit-post/${row.original.HealthArticleID}`)
                 }
-                disabled={isDisabled}
-                className={`px-4 py-2 rounded-lg text-white ${
-                  isDisabled
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-orange-500 hover:bg-orange-600"
+                disabled={!canEdit}
+                className={`px-4 py-2 rounded-lg text-white bg-orange-500 hover:bg-orange-600 ${
+                  !canEdit
+                    ? "opacity-50 pointer-events-none"
+                    : ""
                 }`}
               >
                 แก้ไข
@@ -264,11 +283,11 @@ export default function BlogManagement() {
                   setPostIdToDelete(row.original.HealthArticleID);
                   setIsModalOpen(true);
                 }}
-                disabled={isDisabled}
-                className={`px-4 py-2 rounded-lg text-white ${
-                  isDisabled
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-red-500 hover:bg-red-600"
+                disabled={!canEdit}
+                className={`px-4 py-2 rounded-lg text-white bg-red-500 hover:bg-red-600 ${
+                  !canEdit
+                    ? "opacity-50 pointer-events-none"
+                    : ""
                 }`}
               >
                 ลบ
@@ -279,12 +298,7 @@ export default function BlogManagement() {
                 onClick={() =>
                   router.push(`/admin/dashboard/articles-edit/${row.original.HealthArticleID}`)
                 }
-                disabled={isDisabled}
-                className={`px-4 py-2 rounded-lg text-white ${
-                  isDisabled
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-yellow-500 hover:bg-yellow-600"
-                }`}
+                className="px-4 py-2 rounded-lg text-white bg-yellow-500 hover:bg-yellow-600"
               >
                 ประวัติ
               </button>
