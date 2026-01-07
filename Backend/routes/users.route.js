@@ -75,8 +75,9 @@ export const userRoutes = new Elysia({ prefix: "/users" })
         // สร้าง JWT token เพื่อส่งกลับไปให้ client เพื่อทำการบอก seession ของผู้ใช้ หมดอายุ
         const token = jwt.sign({
             data: {
-                "username": admin.AdminName,
                 "id": admin.AdminID,
+                "username": admin.AdminName,
+                "role": admin.Role,
                 "isActive": admin.isActive
             }
         }, 'secret', { expiresIn: '24h' }); // หมายเหตุ: ควรใช้ secret จาก .env
@@ -85,8 +86,9 @@ export const userRoutes = new Elysia({ prefix: "/users" })
         return {
             "token": token,
             "resultData": {
-                "username": admin.AdminName,
                 "id": admin.AdminID,
+                "username": admin.AdminName,
+                "role": admin.Role,
                 "isActive": admin.isActive
             }
         };
