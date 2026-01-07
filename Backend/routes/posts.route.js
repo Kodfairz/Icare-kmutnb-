@@ -158,13 +158,20 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
     })
 
     // DELETE คือ http method /posts/:id - ลบโพสต์
-    .delete("/:id", async ({ params }) => {
+    .delete("/:id", async ({ params, body }) => {
         console.log(params)
         const healtharticles = await prisma.healtharticles.findFirst({
             where : { HealthArticleID : Number(params.id) } // ดึงโพสต์ตาม HealthArticleID ด้วย ID ที่ส่งมา จาก params
         })
 
         if(!healtharticles) throw new Error("ไม่เจอข้อมูล");
+
+        // ตรวจสอบว่า admin ที่ login เป็นเจ้าของ post นี้หรือไม่
+        if(healtharticles.AdminID !== Number(body.admin_id)) {
+            const error = new Error("Forbidden: คุณไม่มีสิทธิ์ลบข้อมูลนี้");
+            error.status = 403;
+            throw error;
+        }
 
         const deleteDisease = await prisma.diseases.delete({
             where: { DiseaseID: healtharticles.DiseaseID } // ดึงโพสต์ตาม DiseaseID ที่ได้จาก healtharticles เพื่อทำการลบโรคที่เกี่ยวข้อง
@@ -216,6 +223,13 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
         })
 
         if(!healtharticles) throw new Error("ไม่เจอข้อมูล");
+
+        // ตรวจสอบว่า admin ที่ login เป็นเจ้าของ post นี้หรือไม่
+        if(healtharticles.AdminID !== Number(body.admin_id)) {
+            const error = new Error("Forbidden: คุณไม่มีสิทธิ์แก้ไขข้อมูลนี้");
+            error.status = 403;
+            throw error;
+        }
 
         const updateDisease = await prisma.diseases.update({
             where: { DiseaseID: Number(params.id) }, // แก้ไขตาม ID ของโรคที่ส่งมา จาก params 

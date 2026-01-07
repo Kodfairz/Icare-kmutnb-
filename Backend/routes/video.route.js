@@ -135,6 +135,13 @@ export const videoRoutes = new Elysia({ prefix : "/video" })
         throw new Error("ไม่เจอวิดีโอ")
     }
 
+    // ตรวจสอบว่า admin ที่ login เป็นเจ้าของ video นี้หรือไม่
+    if(video.AdminID !== Number(body.admin_id)) {
+        const error = new Error("Forbidden: คุณไม่มีสิทธิ์แก้ไขข้อมูลนี้");
+        error.status = 403;
+        throw error;
+    }
+
     const updateVideo = await prisma.videoarticles.update({
         where : {
             VideoArticleID : Number(params.id)            //หา video ที่มี id ตรงกับ param
@@ -190,7 +197,7 @@ export const videoRoutes = new Elysia({ prefix : "/video" })
 })
 
 // DELETE /video/:id : ลบวิดีโอตาม id
-.delete("/:id", async ({ params }) => {      // DELETE /video/:id : ลบวิดีโอตาม id
+.delete("/:id", async ({ params, body }) => {      // DELETE /video/:id : ลบวิดีโอตาม id
     const video = await prisma.videoarticles.findFirst({
         where : {
             VideoArticleID : Number(params.id)            // หา video ที่มี id ตรงกับ param
@@ -199,6 +206,13 @@ export const videoRoutes = new Elysia({ prefix : "/video" })
 
     if(!video) {                            // ถ้าไม่เจอวิดีโอ
         throw new Error("ไม่มีวิดีโอ");
+    }
+
+    // ตรวจสอบว่า admin ที่ login เป็นเจ้าของ video นี้หรือไม่
+    if(video.AdminID !== Number(body.admin_id)) {
+        const error = new Error("Forbidden: คุณไม่มีสิทธิ์ลบข้อมูลนี้");
+        error.status = 403;
+        throw error;
     }
 
     const deleteVideo = await prisma.videoarticles.delete({
@@ -227,6 +241,13 @@ export const videoRoutes = new Elysia({ prefix : "/video" })
 
     if(!video) {                            // ถ้าไม่เจอวิดีโอ
         throw new Error("ไม่เจอวิดีโอ")
+    }
+
+    // ตรวจสอบว่า admin ที่ login เป็นเจ้าของ video นี้หรือไม่
+    if(video.AdminID !== Number(body.admin_id)) {
+        const error = new Error("Forbidden: คุณไม่มีสิทธิ์เปลี่ยนสถานะข้อมูลนี้");
+        error.status = 403;
+        throw error;
     }
 
     const updateVideo = await prisma.videoarticles.update({

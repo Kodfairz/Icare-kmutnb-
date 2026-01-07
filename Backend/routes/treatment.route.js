@@ -25,6 +25,29 @@ export const TreatmentsRoutes = new Elysia({ prefix: "/treatments" })
 
 // POST /diseases/treatments //เพิ่มข้อมูลการรักษาโรคใหม่
     .post("/", async ({ body }) => {
+        // ตรวจสอบว่า admin ที่ login เป็นเจ้าของ disease ที่จะเพิ่ม treatment หรือไม่
+        const disease = await prisma.diseases.findFirst({
+            where: {
+                DiseaseID: Number(body.disease_id)
+            },
+            include: {
+                healtharticles: true
+            }
+        });
+
+        if(!disease) throw new Error("ไม่พบข้อมูลโรค");
+
+        // ตรวจสอบว่า admin ที่ login เป็นเจ้าของ healtharticle ของ disease นี้หรือไม่
+        const isOwner = disease.healtharticles.some(
+            article => article.AdminID === Number(body.admin_id)
+        );
+
+        if(!isOwner) {
+            const error = new Error("Forbidden: คุณไม่มีสิทธิ์เพิ่มข้อมูลให้โรคนี้");
+            error.status = 403;
+            throw error;
+        }
+
         const treatments = await prisma.treatments.create({
             data: {
                 TreatmentName: body.treatment_name, //เพื่อเก็บข้อมูลชื่อการรักษาโรค
@@ -63,6 +86,33 @@ export const TreatmentsRoutes = new Elysia({ prefix: "/treatments" })
 
 // PUT /diseases/treatments/:id แก้ไขข้อมูลการรักษาโรคตาม ID ที่ระบุ
     .put("/:id", async ({ params, body }) => {
+        // ตรวจสอบว่า treatment นี้เชื่อมโยงกับ disease ไหน และ admin ที่ login เป็นเจ้าของ disease นั้นหรือไม่
+        const diseaseTreatment = await prisma.disease_treatments.findFirst({
+            where: {
+                TreatmentID: Number(params.id)
+            },
+            include: {
+                diseases: {
+                    include: {
+                        healtharticles: true
+                    }
+                }
+            }
+        });
+
+        if(!diseaseTreatment) throw new Error("ไม่พบข้อมูลการรักษา");
+
+        // ตรวจสอบว่า admin ที่ login เป็นเจ้าของ healtharticle ของ disease นี้หรือไม่
+        const isOwner = diseaseTreatment.diseases.healtharticles.some(
+            article => article.AdminID === Number(body.admin_id)
+        );
+
+        if(!isOwner) {
+            const error = new Error("Forbidden: คุณไม่มีสิทธิ์แก้ไขข้อมูลนี้");
+            error.status = 403;
+            throw error;
+        }
+
         const treatments = await prisma.treatments.update({
             where: {
                 TreatmentID: Number(params.id) // แปลง ID ที่รับมาจาก params เพื่อค้นหาข้อมูลการรักษาที่ต้องการแก้ไข
@@ -83,7 +133,34 @@ export const TreatmentsRoutes = new Elysia({ prefix: "/treatments" })
     })
 
 // DELETE /treatments/:id
-    .delete("/:id", async ({ params }) => {
+    .delete("/:id", async ({ params, body }) => {
+        // ตรวจสอบว่า treatment นี้เชื่อมโยงกับ disease ไหน และ admin ที่ login เป็นเจ้าของ disease นั้นหรือไม่
+        const diseaseTreatment = await prisma.disease_treatments.findFirst({
+            where: {
+                TreatmentID: Number(params.id)
+            },
+            include: {
+                diseases: {
+                    include: {
+                        healtharticles: true
+                    }
+                }
+            }
+        });
+
+        if(!diseaseTreatment) throw new Error("ไม่พบข้อมูลการรักษา");
+
+        // ตรวจสอบว่า admin ที่ login เป็นเจ้าของ healtharticle ของ disease นี้หรือไม่
+        const isOwner = diseaseTreatment.diseases.healtharticles.some(
+            article => article.AdminID === Number(body.admin_id)
+        );
+
+        if(!isOwner) {
+            const error = new Error("Forbidden: คุณไม่มีสิทธิ์ลบข้อมูลนี้");
+            error.status = 403;
+            throw error;
+        }
+
         const treatments = await prisma.treatments.delete({
             where: {
                 TreatmentID: Number(params.id) // แปลง ID ที่รับมาจาก params เพื่อค้นหาข้อมูลการรักษาที่ต้องการลบ
