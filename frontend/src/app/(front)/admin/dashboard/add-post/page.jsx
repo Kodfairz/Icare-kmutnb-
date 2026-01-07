@@ -33,6 +33,20 @@ export default function AddPostPage() {
   const [publishStatus, setPublishStatus] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("edit");
+  
+  // States สำหรับเลือกโหมด (จากคลัง/อัปโหลดใหม่)
+  const [imageMode, setImageMode] = useState("library"); // "library" หรือ "new"
+  const [videoMode, setVideoMode] = useState("library"); // "library" หรือ "new"
+  
+  // States สำหรับข้อมูลรูปภาพใหม่
+  const [newImageName, setNewImageName] = useState("");
+  const [newImageURL, setNewImageURL] = useState("");
+  const [newImageCredit, setNewImageCredit] = useState("");
+  
+  // States สำหรับข้อมูลวิดีโอใหม่
+  const [newVideoName, setNewVideoName] = useState("");
+  const [newVideoURL, setNewVideoURL] = useState("");
+  
   const router = useRouter();
 
   // ตัว editor สำหรับเนื้อหาในฟิลด์หลัก
@@ -163,18 +177,24 @@ export default function AddPostPage() {
     };
   };
 
-  // const handleCoverImageUpload = async (file) => {
-  //   const imageUrl = await handleImageUpload(file);
-  //   if (imageUrl) {
-  //     setImageId(imageUrl);
-  //   }
-  // };
+  // ฟังก์ชันอัปโหลดรูปหน้าปกใหม่
+  const handleCoverImageUpload = async (file) => {
+    const imageUrl = await handleImageUpload(file);
+    if (imageUrl) {
+      setNewImageURL(imageUrl);
+    }
+  };
 
-  // const onDrop = (acceptedFiles) => {
-  //   if (acceptedFiles.length > 0) {
-  //     handleCoverImageUpload(acceptedFiles[0]);
-  //   }
-  // };
+  const onDropCoverImage = (acceptedFiles) => {
+    if (acceptedFiles.length > 0) {
+      handleCoverImageUpload(acceptedFiles[0]);
+    }
+  };
+  
+  const { getRootProps: getRootPropsCoverImage, getInputProps: getInputPropsCoverImage } = useDropzone({
+    onDrop: onDropCoverImage,
+    accept: "image/*",
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -198,12 +218,44 @@ export default function AddPostPage() {
       }
       const userId = JSON.parse(user).id;
 
+      let finalImageId = imageId;
+      let finalVideoId = videoId;
+
+      // ถ้าเลือกโหมดอัปโหลดรูปภาพใหม่
+      if (imageMode === "new") {
+        if (!newImageName || !newImageURL || !newImageCredit) {
+          toast.error("กรุณากรอกข้อมูลรูปภาพให้ครบถ้วน");
+          setIsLoading(false);
+          return;
+        }
+        const imageResponse = await axios.post(`${API}/images`, {
+          image_name: newImageName,
+          image_url: newImageURL,
+          credit: newImageCredit,
+        });
+        finalImageId = imageResponse.data.resultData.ImageID;
+      }
+
+      // ถ้าเลือกโหมดเพิ่มวิดีโอใหม่
+      if (videoMode === "new") {
+        if (!newVideoName || !newVideoURL) {
+          toast.error("กรุณากรอกข้อมูลวิดีโอให้ครบถ้วน");
+          setIsLoading(false);
+          return;
+        }
+        const videoResponse = await axios.post(`${API}/videos`, {
+          video_name: newVideoName,
+          video_url: newVideoURL,
+        });
+        finalVideoId = videoResponse.data.resultData.VideoID;
+      }
+
       const response = await axios.post(`${API}/posts`, {
         name: title,
         description: description,
         category_id: category.toString(),
-        image_id: imageId,
-        video_id: videoId,
+        image_id: finalImageId,
+        video_id: finalVideoId,
         icd10_code: icd10Code,
         risk_factors: content,
         symptoms: symptom,
@@ -425,20 +477,81 @@ export default function AddPostPage() {
             >
               หน้าปกข้อมูล
             </label>
-            <Select
-              id="image"
-              options={ImageOptions}
-              value={ImageOptions.find((option) => option.value === imageId) || null}
-              onChange={(selected) => setImageId(selected?.value || null)}
-              placeholder="เลือกหน้าปกข้อมูล"
-              classNamePrefix="react-select"
-              className="w-full"
-              isClearable
-              components={{
-                Option: customOption,
-                SingleValue: customSingleValue
-              }}
-            />
+            
+            {/* ตัวเลือกโหมด */}
+            <div className="flex gap-4 mb-4">
+              <button
+                type="button"
+                onClick={() => setImageMode("library")}
+                className={`flex-1 p-3 rounded-lg border-2 transition-all ${
+                  imageMode === "library"
+                    ? "border-indigo-600 bg-indigo-50 text-indigo-600"
+                    : "border-gray-300 bg-white text-gray-700"
+                }`}
+              >
+                เลือกจากคลัง
+              </button>
+              <button
+                type="button"
+                onClick={() => setImageMode("new")}
+                className={`flex-1 p-3 rounded-lg border-2 transition-all ${
+                  imageMode === "new"
+                    ? "border-indigo-600 bg-indigo-50 text-indigo-600"
+                    : "border-gray-300 bg-white text-gray-700"
+                }`}
+              >
+                อัปโหลดใหม่
+              </button>
+            </div>
+
+            {/* แสดงตามโหมดที่เลือก */}
+            {imageMode === "library" ? (
+              <Select
+                id="image"
+                options={ImageOptions}
+                value={ImageOptions.find((option) => option.value === imageId) || null}
+                onChange={(selected) => setImageId(selected?.value || null)}
+                placeholder="เลือกหน้าปกข้อมูล"
+                classNamePrefix="react-select"
+                className="w-full"
+                isClearable
+                components={{
+                  Option: customOption,
+                  SingleValue: customSingleValue
+                }}
+              />
+            ) : (
+              <div className="space-y-4">
+                <input
+                  type="text"
+                  placeholder="ชื่อรูปภาพ"
+                  value={newImageName}
+                  onChange={(e) => setNewImageName(e.target.value)}
+                  className="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                />
+                <div
+                  {...getRootPropsCoverImage()}
+                  className="border-dashed border-2 border-gray-300 p-6 text-center cursor-pointer rounded-lg hover:border-indigo-400"
+                >
+                  <input {...getInputPropsCoverImage()} />
+                  <p className="text-gray-500">ลากและวางหรือคลิกเพื่อเลือกรูปภาพ</p>
+                  {newImageURL && (
+                    <img
+                      src={newImageURL}
+                      alt="Preview"
+                      className="max-w-xs max-h-60 w-full h-auto mx-auto rounded-lg mt-4 object-cover shadow"
+                    />
+                  )}
+                </div>
+                <input
+                  type="text"
+                  placeholder="เครดิตรูปภาพ"
+                  value={newImageCredit}
+                  onChange={(e) => setNewImageCredit(e.target.value)}
+                  className="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                />
+              </div>
+            )}
           </div>
 
           <div>
@@ -448,18 +561,76 @@ export default function AddPostPage() {
             >
               วิดีโอแนะนำ
             </label>
-            <Select
-              id="video"
-              options={videoOptions}
-              value={videoOptions.find((option) => option.value === videoId) || null}
-              onChange={(selected) => {
-                setVideoId(selected?.value || null);
-                setSelectedVideo(selected || null); // เก็บ object ที่เลือกไว้
-              }}
-              placeholder="เลือกวิดีโอแนะนำ"
-              classNamePrefix="react-select"
-              className="w-full"
-            />
+            
+            {/* ตัวเลือกโหมด */}
+            <div className="flex gap-4 mb-4">
+              <button
+                type="button"
+                onClick={() => setVideoMode("library")}
+                className={`flex-1 p-3 rounded-lg border-2 transition-all ${
+                  videoMode === "library"
+                    ? "border-indigo-600 bg-indigo-50 text-indigo-600"
+                    : "border-gray-300 bg-white text-gray-700"
+                }`}
+              >
+                เลือกจากคลัง
+              </button>
+              <button
+                type="button"
+                onClick={() => setVideoMode("new")}
+                className={`flex-1 p-3 rounded-lg border-2 transition-all ${
+                  videoMode === "new"
+                    ? "border-indigo-600 bg-indigo-50 text-indigo-600"
+                    : "border-gray-300 bg-white text-gray-700"
+                }`}
+              >
+                เพิ่มลิงก์ใหม่
+              </button>
+            </div>
+
+            {/* แสดงตามโหมดที่เลือก */}
+            {videoMode === "library" ? (
+              <Select
+                id="video"
+                options={videoOptions}
+                value={videoOptions.find((option) => option.value === videoId) || null}
+                onChange={(selected) => {
+                  setVideoId(selected?.value || null);
+                  setSelectedVideo(selected || null);
+                }}
+                placeholder="เลือกวิดีโอแนะนำ"
+                classNamePrefix="react-select"
+                className="w-full"
+                isClearable
+              />
+            ) : (
+              <div className="space-y-4">
+                <input
+                  type="text"
+                  placeholder="ชื่อวิดีโอ"
+                  value={newVideoName}
+                  onChange={(e) => setNewVideoName(e.target.value)}
+                  className="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                />
+                <input
+                  type="url"
+                  placeholder="URL วิดีโอ YouTube"
+                  value={newVideoURL}
+                  onChange={(e) => {
+                    setNewVideoURL(e.target.value);
+                    const youtubeId = extractYouTubeID(e.target.value);
+                    if (youtubeId) {
+                      setSelectedVideo({
+                        youtubeId,
+                        label: newVideoName || "วิดีโอใหม่",
+                        videoUrl: e.target.value
+                      });
+                    }
+                  }}
+                  className="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                />
+              </div>
+            )}
           </div>
 
           {selectedVideo && (
