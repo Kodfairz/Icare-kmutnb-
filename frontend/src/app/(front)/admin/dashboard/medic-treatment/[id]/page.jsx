@@ -28,6 +28,7 @@ import { toast } from "react-toastify";
 // นำเข้า toast สำหรับแสดงข้อความแจ้งเตือนสถานะต่าง ๆ
 
 import ModalConfirm from "../../../../../components/ModalConfirm";  // เพิ่ม import ModalConfirm
+import { getAdminData } from "../../../../../lib/getAdminData";
 // นำเข้า ModalConfirm สำหรับ modal ยืนยันการลบข้อมูล
 
 export default function Medic_Treatment() {
@@ -35,8 +36,8 @@ export default function Medic_Treatment() {
   const router = useRouter();
   // ใช้สำหรับเปลี่ยนหน้า
 
-  const [userId, setUserId] = useState(null);
-  // สถานะเก็บ id ของผู้ใช้ที่ล็อกอินอยู่
+  const [adminData, setAdminData] = useState(null);
+  // สถานะเก็บข้อมูลผู้ดูแลระบบที่ล็อกอินอยู่
 
   const [disease, setDisease] = useState([]);
   // สถานะเก็บข้อมูลข้อมูลยาที่ดึงมาจาก API
@@ -65,25 +66,12 @@ export default function Medic_Treatment() {
   // เก็บ id ของข้อมูลการรักษาที่ต้องการลบ
 
   useEffect(() => {
-    const fetchUserId = async () => {
-      setIsLoading(true);
-      const cookie = Cookies.get("user");
-
-      if (cookie) {
-        try {
-          const parsed = JSON.parse(cookie);
-          setUserId(parsed.id);
-        } catch (e) {
-          console.error("Error parsing cookie:", e);
-          toast.error("เกิดข้อผิดพลาดในการดึงข้อมูลผู้ใช้");
-        }
-      } else {
-        toast.error("ไม่พบข้อมูลผู้ใช้ใน cookie");
-      }
-      setIsLoading(false);
+    const loadAdmin = async () => {
+      const data = await getAdminData();
+      setAdminData(data);
     };
 
-    fetchUserId();
+    loadAdmin();
   }, []);
 
   // ฟังก์ชันดึงข้อมูลข้อมูลยาจาก API
@@ -127,17 +115,17 @@ export default function Medic_Treatment() {
 
   // ดึงข้อมูลข้อมูลยาครั้งแรกตอน component โหลด
   useEffect(() => {
-    if (userId) {
       getDisease();
       getMedics();
       getTreatments();
-    }
-  }, [userId]);
+  }, []);
 
   // ฟังก์ชันลบข้อมูลยาตาม id ที่เลือกไว้
   const deleteMedic = async () => {
     try {
-      const response = await axios.delete(`${API}/medics/${medicIdToDelete}`);
+      const response = await axios.delete(`${API}/medics/${medicIdToDelete}`, {
+        data: { admin_id: adminData.id } // ส่ง admin_id ไปเพื่อตรวจสอบสิทธิ์การลบ
+      });
       toast.success(response.data.message || "ลบข้อมูลสำเร็จแล้ว");
       getMedics(); // ดึงข้อมูลใหม่หลังลบเสร็จ
       setIsModalMedicOpen(false); // ปิด modal confirm
@@ -151,7 +139,9 @@ export default function Medic_Treatment() {
   // ฟังก์ชันลบข้อมูลยาตาม id ที่เลือกไว้
   const deleteTreatment = async () => {
     try {
-      const response = await axios.delete(`${API}/treatments/${treatmentIdToDelete}`);
+      const response = await axios.delete(`${API}/treatments/${treatmentIdToDelete}`, {
+        data: { admin_id: adminData.id } // ส่ง admin_id ไปเพื่อตรวจสอบสิทธิ์การลบ
+      });
       toast.success(response.data.message || "ลบข้อมูลสำเร็จแล้ว");
       getTreatments(); // ดึงข้อมูลใหม่หลังลบเสร็จ
       setIsModalTreatmentOpen(false); // ปิด modal confirm
@@ -161,6 +151,10 @@ export default function Medic_Treatment() {
       toast.error(error.response.message || "ไม่สามารถลบข้อมูลได้");
     }
   };
+
+  const canEdit = Boolean(
+    adminData && (adminData.role === "SuperAdmin" || Number(adminData.id) === Number(disease.AdminID))
+  )
 
   // กำหนดคอลัมน์สำหรับตาราง โดยใช้ useMemo เพื่อประสิทธิภาพไม่ให้สร้างใหม่ทุกครั้งที่ render
   const columnsMedications = useMemo(
@@ -251,7 +245,12 @@ export default function Medic_Treatment() {
                 onClick={() =>
                   router.push(`/admin/dashboard/edit-medication/${row.original.MedicationID}`)
                 }
-                className={`px-4 py-2 rounded-lg text-white bg-orange-500 hover:bg-orange-600`}
+                disabled={!canEdit}
+                className={`px-4 py-2 rounded-lg text-white bg-orange-500 hover:bg-orange-600 ${
+                  !canEdit
+                    ? "opacity-50 pointer-events-none"
+                    : ""
+                }`}
               >
                 แก้ไข
               </button>
@@ -262,7 +261,12 @@ export default function Medic_Treatment() {
                   setMedicIdToDelete(row.original.MedicationID);
                   setIsModalMedicOpen(true);
                 }}
-                className={`px-4 py-2 rounded-lg text-white bg-red-500 hover:bg-red-600`}
+                disabled={!canEdit}
+                className={`px-4 py-2 rounded-lg text-white bg-red-500 hover:bg-red-600 ${
+                  !canEdit
+                    ? "opacity-50 pointer-events-none"
+                    : ""
+                }`}
               >
                 ลบ
               </button>
@@ -271,7 +275,7 @@ export default function Medic_Treatment() {
         },
       },
     ],
-    [router]
+    [router, adminData, canEdit]
   );
 
   // กำหนดคอลัมน์สำหรับตาราง โดยใช้ useMemo เพื่อประสิทธิภาพไม่ให้สร้างใหม่ทุกครั้งที่ render
@@ -339,7 +343,12 @@ export default function Medic_Treatment() {
                 onClick={() =>
                   router.push(`/admin/dashboard/edit-treatment/${row.original.TreatmentID}`)
                 }
-                className={`px-4 py-2 rounded-lg text-white bg-orange-500 hover:bg-orange-600`}
+                disabled={!canEdit}
+                className={`px-4 py-2 rounded-lg text-white bg-orange-500 hover:bg-orange-600 ${
+                  !canEdit
+                    ? "opacity-50 pointer-events-none"
+                    : ""
+                }`}
               >
                 แก้ไข
               </button>
@@ -350,7 +359,12 @@ export default function Medic_Treatment() {
                   setTreatmentIdToDelete(row.original.TreatmentID);
                   setIsModalTreatmentOpen(true);
                 }}
-                className={`px-4 py-2 rounded-lg text-white bg-red-500 hover:bg-red-600`}
+                disabled={!canEdit}
+                className={`px-4 py-2 rounded-lg text-white bg-red-500 hover:bg-red-600 ${
+                  !canEdit
+                    ? "opacity-50 pointer-events-none"
+                    : ""
+                }`}
               >
                 ลบ
               </button>
@@ -359,7 +373,7 @@ export default function Medic_Treatment() {
         },
       },
     ],
-    [router]
+    [router, adminData, canEdit]
   );
 
   // สร้าง instance ของ React Table โดยกำหนดข้อมูลและคอลัมน์ พร้อมเปิดใช้งาน pagination
@@ -431,7 +445,8 @@ export default function Medic_Treatment() {
               {/* ปุ่มเพิ่มข้อมูลยา เปลี่ยนหน้าไปยังฟอร์มเพิ่มข้อมูลยา */}
               <button
                 onClick={() => router.push(`/admin/dashboard/add-medication/${id}`)}
-                className="px-6 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-all duration-300 hover:scale-105 mb-6"
+                disabled={!canEdit}
+                className="px-6 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-all duration-300 hover:scale-105 mb-6 disabled:opacity-50 disabled:pointer-events-none"
               >
                 + เพิ่มข้อมูล
               </button>
@@ -510,7 +525,8 @@ export default function Medic_Treatment() {
               {/* ปุ่มเพิ่มข้อมูลการรักษา เปลี่ยนหน้าไปยังฟอร์มเพิ่มข้อมูลการรักษา */}
               <button
                 onClick={() => router.push(`/admin/dashboard/add-treatment/${id}`)}
-                className="px-6 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-all duration-300 hover:scale-105 mb-6"
+                disabled={!canEdit}
+                className="px-6 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-all duration-300 hover:scale-105 mb-6 disabled:opacity-50 disabled:pointer-events-none"
               >
                 + เพิ่มข้อมูล
               </button>
