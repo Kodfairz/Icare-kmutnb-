@@ -11,6 +11,7 @@ model admins {
   AdminID        Int              @id @default(autoincrement())
   AdminName      String           @db.VarChar(100)
   Password       String           @db.VarChar(255)
+  Role           admins_Role      @default(Admin)
   isActive       Boolean
   CreatedAt      DateTime         @default(now()) @db.Timestamp(0)
   articleedits   articleedits[]
@@ -167,4 +168,10 @@ model videolibrary {
   VideoURL       String           @db.VarChar(255)
   healtharticles healtharticles[]
   videoarticles  videoarticles[]
+}
+
+enum admins_Role {
+  SuperAdmin
+  Admin
+  EMPTY_ENUM_VALUE @map("")
 }
