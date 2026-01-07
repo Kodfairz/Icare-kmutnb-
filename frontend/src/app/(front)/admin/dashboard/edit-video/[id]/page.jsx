@@ -135,8 +135,13 @@ export default function EditVideoPage() {
         router.push("/admin/dashboard"); // กลับหน้าแดชบอร์ดหลังแก้ไขสำเร็จ
       }
     } catch (error) {
-      console.log(error);
+      if (error.response.status === 403) {
+        toast.error("คุณไม่มีสิทธิ์ในการแก้ไขวิดีโอนี้");
+        return;
+      }
+
       toast.error(error.response?.data?.message || "เเก้ไขวิดีโอไม่สำเร็จ");
+      console.log(error);
     } finally {
       setIsLoading(false); // ปิดสถานะกำลังส่งข้อมูล
     }

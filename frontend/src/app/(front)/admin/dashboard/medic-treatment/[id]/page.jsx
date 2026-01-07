@@ -131,8 +131,13 @@ export default function Medic_Treatment() {
       setIsModalMedicOpen(false); // ปิด modal confirm
       setMedicIdToDelete(null); // ล้างค่า id ที่จะลบ
     } catch (error) {
-      console.log(error);
+      if (error.response.status === 403) {
+        toast.error("คุณไม่มีสิทธิ์ในการลบข้อมูลยานี้");
+        return;
+      }
+
       toast.error(error.response.message || "ไม่สามารถลบข้อมูลได้");
+      console.log(error);
     }
   };
 
@@ -147,8 +152,13 @@ export default function Medic_Treatment() {
       setIsModalTreatmentOpen(false); // ปิด modal confirm
       setTreatmentIdToDelete(null); // ล้างค่า id ที่จะลบ
     } catch (error) {
-      console.log(error);
+      if (error.response.status === 403) {
+        toast.error("คุณไม่มีสิทธิ์ในการลบข้อมูลการรักษานี้");
+        return;
+      }
+
       toast.error(error.response.message || "ไม่สามารถลบข้อมูลได้");
+      console.log(error);
     }
   };
 

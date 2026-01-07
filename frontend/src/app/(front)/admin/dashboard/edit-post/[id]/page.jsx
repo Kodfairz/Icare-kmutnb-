@@ -239,6 +239,11 @@ export default function EditPostPage() {
       toast.success(res.data.message || "อัปเดตข้อมูลสำเร็จ");
       router.push("/admin/dashboard");
     } catch (err) {
+      if (err.response.status === 403) {
+        toast.error("คุณไม่มีสิทธิ์ในการแก้ไขโพสต์นี้");
+        return;
+      }
+
       toast.error("อัปเดตข้อมูลไม่สำเร็จ");
       console.error("Error updating post:", err);
     } finally {

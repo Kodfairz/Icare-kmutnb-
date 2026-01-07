@@ -39,6 +39,12 @@ export default function AddTreatmentPage() {
                 router.back();
             }
         } catch (error) {
+            if (error.response.status === 403) {
+                toast.error("คุณไม่มีสิทธิ์ในการเพิ่มข้อมูลการรักษา");
+                setIsLoading(false);
+                return;
+            }
+
             toast.error(
                 error.response?.data?.message || "เพิ่มข้อมูลไม่สำเร็จ"
             );

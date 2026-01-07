@@ -68,8 +68,13 @@ const VideoManagement = () => {
       toast.success(response.data.message || "ลบวิดีโอสำเร็จ"); // แจ้งเตือนสำเร็จ
       getVideos(); // โหลดข้อมูลใหม่หลังลบเสร็จ
     } catch (error) {
-      console.log(error);
+      if (error.response.status === 403) {
+        toast.error("คุณไม่มีสิทธิ์ในการลบวิดีโอนี้");
+        return;
+      }
+
       toast.error(error.response?.message || "ไม่สามารถลบวิดีโอได้"); // แจ้งเตือนถ้าเกิดข้อผิดพลาด
+      console.log(error);
     }
   };
 

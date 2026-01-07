@@ -61,6 +61,12 @@ export default function EditMedicationPage() {
                 router.back();
             }
         } catch (error) {
+            if (error.response.status === 403) {
+                toast.error("คุณไม่มีสิทธิ์ในการแก้ไขข้อมูลการรักษา");
+                setIsLoading(false);
+                return;
+            }
+
             toast.error(
                 error.response?.data?.message || "แก้ไขข้อมูลไม่สำเร็จ"
             );

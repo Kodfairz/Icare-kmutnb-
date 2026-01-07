@@ -45,6 +45,12 @@ export default function AddMedicationPage() {
                 router.back();
             }
         } catch (error) {
+            if (error.response.status === 403) {
+                toast.error("คุณไม่มีสิทธิ์ในการเพิ่มข้อมูลยา");
+                setIsLoading(false);
+                return;
+            }
+
             toast.error(
                 error.response?.data?.message || "เพิ่มข้อมูลไม่สำเร็จ"
             );

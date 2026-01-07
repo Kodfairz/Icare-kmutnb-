@@ -147,8 +147,13 @@ export default function BlogManagement() {
       setIsModalOpen(false); // ปิด modal confirm
       setPostIdToDelete(null); // ล้างค่า id ที่จะลบ
     } catch (error) {
-      console.log(error);
+      if (error.response.status === 403) {
+        toast.error("คุณไม่มีสิทธิ์ในการลบโพสต์นี้");
+        return;
+      }
+
       toast.error(error.response.message || "ไม่สามารถลบข้อมูลได้");
+      console.log(error);
     }
   };
 
