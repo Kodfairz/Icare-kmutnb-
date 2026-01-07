@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation"; // ใช้สำหรับ navigation ใน Next.js (ถ้าจำเป็น)
 import { API } from "../../service/api"; // ตัวแปร API endpoint
+import { getAdminData } from "../../lib/getAdminData";
 import { toast } from "react-toastify"; // ใช้แสดงแจ้งเตือน
 import axios from "axios"; // สำหรับเรียก API
 import {
@@ -51,6 +52,8 @@ function ConfirmModal({ open, onClose, onConfirm, title = "ยืนยัน", 
 export default function AdminList() {
     // สถานะเก็บข้อมูลแอดมิน
     const [adminList, setAdminList] = useState([]);
+    // สถานะเก็บข้อมูลแอดมินปัจจุบัน
+    const [adminData, setAdminData] = useState(null);
     // สถานะเปิด/ปิด modal เพิ่มแอดมิน
     const [isModalOpen, setIsModalOpen] = useState(false);
     // สถานะเปิด/ปิด modal แก้ไขแอดมิน
@@ -68,6 +71,13 @@ export default function AdminList() {
     // เมื่อ component โหลดครั้งแรก ให้เรียกข้อมูลแอดมินทั้งหมด
     useEffect(() => {
         fetchAdminsData();
+
+        const loadAdmin = async () => {
+            const data = await getAdminData();
+            setAdminData(data);
+        };
+
+        loadAdmin();
     }, []);
 
     // ฟังก์ชันเรียกข้อมูลแอดมินจาก API
@@ -158,7 +168,8 @@ export default function AdminList() {
         () => [
             { header: "ไอดี", accessorKey: "AdminID" }, // แสดง id
             { header: "ผู้ใช้", accessorKey: "AdminName" }, // แสดง username
-            {
+            adminData?.role === "SuperAdmin" && {
+                id: "status",
                 header: "สถานะ",
                 accessorKey: "active",
                 cell: ({ row }) => (
@@ -175,40 +186,63 @@ export default function AdminList() {
             {
                 header: "เครื่องมือ",
                 id: "actions",
-                cell: ({ row }) => (
-                    <div className="flex gap-2">
-                        {/* ปุ่มแก้ไขข้อมูล */}
-                        <button
-                            onClick={() => {
-                                setIsModalOpenEdit(true);
-                                setIdUser(row.original.AdminID); // กำหนด idUser ที่จะแก้ไข
-                            }}
-                            className="px-3 py-1 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-all duration-200 hover:scale-105"
-                        >
-                            แก้ไข
-                        </button>
-                        {/* ปุ่มเปลี่ยนรหัสผ่าน */}
-                        <button
-                            onClick={() => {
-                                setIsModalOpenChangePassword(true);
-                                setIdUser(row.original.AdminID); // กำหนด idUser ที่จะแก้ไขรหัสผ่าน
-                            }}
-                            className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all duration-200 hover:scale-105"
-                        >
-                            เปลี่ยนรหัสผ่าน
-                        </button>
-                        {/* ปุ่มลบ */}
-                        <button
-                            onClick={() => confirmDeleteUser(row.original.AdminID)}
-                            className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-200 hover:scale-105"
-                        >
-                            ลบ
-                        </button>
-                    </div>
-                ),
+                cell: ({ row }) => {
+                    const canEdit = Boolean(
+                        adminData && (adminData?.role === "SuperAdmin" || Number(adminData?.id) === Number(row.original.AdminID))
+                    );
+
+                    return (
+                        <div className="flex gap-2">
+                            {/* ปุ่มแก้ไขข้อมูล */}
+                            <button
+                                onClick={() => {
+                                    if (!canEdit) return;
+                                    setIsModalOpenEdit(true);
+                                    setIdUser(row.original.AdminID); // กำหนด idUser ที่จะแก้ไข
+                                }}
+                                disabled={!canEdit}
+                                className={`px-3 py-1 bg-amber-500 text-white hover:bg-amber-600 rounded-lg transition-all duration-200 hover:scale-105 ${
+                                    !canEdit
+                                        ? "opacity-50 pointer-events-none"
+                                        : ""
+                                }`}
+                            >
+                                แก้ไข
+                            </button>
+                            {/* ปุ่มเปลี่ยนรหัสผ่าน */}
+                            <button
+                                onClick={() => {
+                                    if (!canEdit) return;
+                                    setIsModalOpenChangePassword(true);
+                                    setIdUser(row.original.AdminID); // กำหนด idUser ที่จะแก้ไขรหัสผ่าน
+                                }}
+                                disabled={!canEdit}
+                                className={`px-3 py-1 bg-blue-500 text-white hover:bg-blue-600 rounded-lg transition-all duration-200 hover:scale-105 ${
+                                    !canEdit
+                                        ? "opacity-50 pointer-events-none"
+                                        : ""
+                                }`}
+                            >
+                                เปลี่ยนรหัสผ่าน
+                            </button>
+                            {/* ปุ่มลบ */}
+                            <button
+                                onClick={() => confirmDeleteUser(row.original.AdminID)}
+                                disabled={!canEdit}
+                                className={`px-3 py-1 bg-red-500 text-white hover:bg-red-600 rounded-lg transition-all duration-200 hover:scale-105 ${
+                                    !canEdit
+                                        ? "opacity-50 pointer-events-none"
+                                        : ""
+                                }`}
+                            >
+                                ลบ
+                            </button>
+                        </div>
+                    );
+                },
             },
-        ],
-        []
+        ].filter(Boolean),
+        [adminData]
     );
 
     // สร้างตารางด้วย react-table
