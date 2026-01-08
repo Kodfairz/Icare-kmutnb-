@@ -261,7 +261,8 @@ export default function AdminList() {
                 <h2 className="text-2xl font-semibold text-gray-800">แสดงข้อมูลแอดมิน</h2>
                 <button
                     onClick={() => setIsModalOpen(true)}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all duration-300 hover:scale-105"
+                    disabled={adminData?.role !== "SuperAdmin"}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:pointer-events-none"
                 >
                     + เพิ่มข้อมูลแอดมิน
                 </button>
