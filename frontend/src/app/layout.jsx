@@ -24,7 +24,7 @@ const geistMono = Geist_Mono({
 // เลือก subset ภาษา latin
 
 export const metadata = {
-  title: "ICare@KMUTNB",
+  title: "iCare@KMUTNB",
   icons: {
     icon: '/pharmacy.png',
   },
