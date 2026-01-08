@@ -3,17 +3,18 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model admins {
   AdminID        Int              @id @default(autoincrement())
   AdminName      String           @db.VarChar(100)
   Password       String           @db.VarChar(255)
-  Role           admins_Role      @default(Admin)
   isActive       Boolean
   CreatedAt      DateTime         @default(now()) @db.Timestamp(0)
+  Role           admins_Role      @default(Admin)
   articleedits   articleedits[]
   healtharticles healtharticles[]
   videoarticles  videoarticles[]
@@ -24,12 +25,12 @@ model articleedits {
   HealthArticleID Int
   AdminID         Int
   EditDate        DateTime       @default(now()) @db.Timestamp(0)
-  EditDescription String?        @db.Text
+  EditDescription String?
   healtharticles  healtharticles @relation(fields: [HealthArticleID], references: [HealthArticleID], onDelete: Cascade, onUpdate: Restrict, map: "articleedits_ibfk_1")
   admins          admins         @relation(fields: [AdminID], references: [AdminID], onUpdate: Restrict, map: "articleedits_ibfk_2")
 
-  @@index([AdminID], map: "AdminID")
-  @@index([HealthArticleID], map: "HealthArticleID")
+  @@index([AdminID])
+  @@index([HealthArticleID])
 }
 
 model categories {
@@ -61,13 +62,13 @@ model disease_treatments {
 model diseases {
   DiseaseID           Int                   @id @default(autoincrement())
   DiseaseName         String                @db.VarChar(255)
-  Description         String?               @db.Text
+  Description         String?
   CategoryID          Int
   ICD10_Code          String?               @db.VarChar(20)
-  RiskFactors         String                @db.Text
-  Prevention          String                @db.Text
-  Symptoms            String                @db.Text
-  Diagnosis           String                @db.Text
+  RiskFactors         String
+  Prevention          String
+  Symptoms            String
+  Diagnosis           String
   disease_medications disease_medications[]
   disease_treatments  disease_treatments[]
   categories          categories            @relation(fields: [CategoryID], references: [CategoryID], onUpdate: Restrict, map: "diseases_ibfk_1")
@@ -78,12 +79,12 @@ model diseases {
 
 model feedbacks {
   FeedbackID      Int             @id @default(autoincrement())
-  FeedbackText    String          @db.Text
+  FeedbackText    String
   CreatedAt       DateTime        @default(now()) @db.Timestamp(0)
   HealthArticleID Int?
   healtharticles  healtharticles? @relation(fields: [HealthArticleID], references: [HealthArticleID], onDelete: Cascade, onUpdate: Restrict, map: "feedbacks_ibfk_1")
 
-  @@index([HealthArticleID], map: "HealthArticleID")
+  @@index([HealthArticleID])
 }
 
 model healtharticles {
@@ -102,10 +103,10 @@ model healtharticles {
   videolibrary    videolibrary?  @relation(fields: [VideoID], references: [VideoID], onUpdate: Restrict, map: "healtharticles_ibfk_3")
   admins          admins         @relation(fields: [AdminID], references: [AdminID], onUpdate: Restrict, map: "healtharticles_ibfk_4")
 
-  @@index([AdminID], map: "AdminID")
+  @@index([AdminID])
   @@index([DiseaseID], map: "DiseaseID")
   @@index([ImageID], map: "ImageID")
-  @@index([VideoID], map: "VideoID")
+  @@index([VideoID])
 }
 
 model imagelibrary {
@@ -123,9 +124,9 @@ model medications {
   GenericName           String                @db.VarChar(255)
   DosageForm            String                @db.VarChar(100)
   Strength              String?               @db.VarChar(50)
-  Indications           String?               @db.Text
-  SideEffects           String?               @db.Text
-  Contraindications     String?               @db.Text
+  Indications           String?
+  SideEffects           String?
+  Contraindications     String?
   SymptomsDrugAllergies String?               @db.VarChar(255)
   TreatDrugAllergies    String?               @db.VarChar(255)
   disease_medications   disease_medications[]
@@ -134,11 +135,11 @@ model medications {
 model treatments {
   TreatmentID        Int                  @id @default(autoincrement())
   TreatmentName      String               @db.VarChar(255)
-  Description        String               @db.Text
-  Procedures         String               @db.Text
+  Description        String
+  Procedures         String
   Duration           String               @db.VarChar(50)
-  SideEffects        String?              @db.Text
-  Contraindications  String?              @db.Text
+  SideEffects        String?
+  Contraindications  String?
   disease_treatments disease_treatments[]
 }
 
@@ -157,9 +158,9 @@ model videoarticles {
   videolibrary   videolibrary @relation(fields: [VideoID], references: [VideoID], onUpdate: Restrict, map: "videoarticles_ibfk_1")
   admins         admins       @relation(fields: [AdminID], references: [AdminID], onUpdate: Restrict, map: "videoarticles_ibfk_2")
 
-  @@index([VideoID], map: "VideoID")
-  @@index([AdminID], map: "AdminID")
-  @@index([ImageID], map: "imagearticles_ibfk_1")
+  @@index([VideoID])
+  @@index([AdminID])
+  @@index([ImageID])
 }
 
 model videolibrary {
