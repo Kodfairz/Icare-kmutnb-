@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jan 08, 2026 at 02:45 PM
+-- Generation Time: Jun 23, 2025 at 06:51 AM
 -- Server version: 10.4.32-MariaDB
--- PHP Version: 8.2.12
+-- PHP Version: 8.0.30
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -32,17 +32,16 @@ CREATE TABLE `admins` (
   `AdminName` varchar(100) NOT NULL,
   `Password` varchar(255) NOT NULL,
   `isActive` tinyint(1) NOT NULL,
-  `CreatedAt` timestamp NOT NULL DEFAULT current_timestamp(),
-  `Role` enum('SuperAdmin','Admin','') NOT NULL DEFAULT 'Admin'
+  `CreatedAt` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `admins`
 --
 
-INSERT INTO `admins` (`AdminID`, `AdminName`, `Password`, `isActive`, `CreatedAt`, `Role`) VALUES
-(1, 'admin', '$2b$10$4.OAlaztF9R6.Vho4UJet.a.oujocS0BJtNzM4ZimYEBFNyL3PeEK', 1, '2025-06-12 22:16:49', 'SuperAdmin'),
-(2, 'icare', '$2b$10$sZyN.ct5Oegh38Sm4rLYBO0CgnJL6iKF9VojKIi9B7hOXPEUPf2Ru', 1, '2025-06-12 15:46:42', 'Admin');
+INSERT INTO `admins` (`AdminID`, `AdminName`, `Password`, `isActive`, `CreatedAt`) VALUES
+(1, 'admin', '$2b$10$4.OAlaztF9R6.Vho4UJet.a.oujocS0BJtNzM4ZimYEBFNyL3PeEK', 1, '2025-06-12 22:16:49'),
+(2, 'icare', '$2b$10$sZyN.ct5Oegh38Sm4rLYBO0CgnJL6iKF9VojKIi9B7hOXPEUPf2Ru', 1, '2025-06-12 15:46:42');
 
 -- --------------------------------------------------------
 
