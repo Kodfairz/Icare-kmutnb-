@@ -1,0 +1,3 @@
+"AdminID","AdminName","Password","isActive","CreatedAt","Role"
+"1","admin","$2b$10$4.OAlaztF9R6.Vho4UJet.a.oujocS0BJtNzM4ZimYEBFNyL3PeEK","1","2025-06-13 05:16:49","SuperAdmin"
+"2","icare","$2b$10$sZyN.ct5Oegh38Sm4rLYBO0CgnJL6iKF9VojKIi9B7hOXPEUPf2Ru","1","2025-06-12 22:46:42","Admin"
