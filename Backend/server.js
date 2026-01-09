@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import { Elysia } from 'elysia'
 import { node } from '@elysiajs/node'
 import cors from '@elysiajs/cors'
@@ -14,7 +15,16 @@ import { ImageRoutes } from './routes/image-library.route.js'
 import { VideoRoutes } from './routes/video-library.route.js'
 
 const app = new Elysia({ adapter: node() })
-	.use(cors())
+	.use(cors(
+		{
+			origin: [
+				'http://localhost:3000',
+				'https://icare-kmutnb.vercel.app'
+			],
+			methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+			allowedHeaders: ['Content-Type', 'Authorization']
+		}
+	))
 	.get('/', () => 'Hello Elysia')
 
 	.use(userRoutes)
@@ -27,8 +37,10 @@ const app = new Elysia({ adapter: node() })
 	.use(ImageRoutes)
 	.use(VideoRoutes)
 
-	.listen(4000, ({ hostname, port }) => {
+	.listen(process.env.PORT || 4000, ({ hostname, port }) => {
 		console.log(
 			`🦊 Elysia is running at ${hostname}:${port}`
 		)
 	})
+
+export default app;
