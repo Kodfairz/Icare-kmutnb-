@@ -29,8 +29,8 @@ model articleedits {
   healtharticles  healtharticles @relation(fields: [HealthArticleID], references: [HealthArticleID], onDelete: Cascade, onUpdate: Restrict, map: "articleedits_ibfk_1")
   admins          admins         @relation(fields: [AdminID], references: [AdminID], onUpdate: Restrict, map: "articleedits_ibfk_2")
 
-  @@index([AdminID])
-  @@index([HealthArticleID])
+  @@index([AdminID], map: "articleedits_AdminID")
+  @@index([HealthArticleID], map: "articleedits_HealthArticleID")
 }
 
 model categories {
@@ -46,7 +46,7 @@ model disease_medications {
   medications  medications @relation(fields: [MedicationID], references: [MedicationID], onDelete: Cascade, onUpdate: Restrict, map: "disease_medications_ibfk_2")
 
   @@id([DiseaseID, MedicationID])
-  @@index([MedicationID], map: "MedicationID")
+  @@index([MedicationID], map: "disease_medications_MedicationID")
 }
 
 model disease_treatments {
@@ -56,7 +56,7 @@ model disease_treatments {
   treatments  treatments @relation(fields: [TreatmentID], references: [TreatmentID], onDelete: Cascade, onUpdate: Restrict, map: "disease_treatments_ibfk_2")
 
   @@id([DiseaseID, TreatmentID])
-  @@index([TreatmentID], map: "TreatmentID")
+  @@index([TreatmentID], map: "disease_treatments_TreatmentID")
 }
 
 model diseases {
@@ -74,7 +74,7 @@ model diseases {
   categories          categories            @relation(fields: [CategoryID], references: [CategoryID], onUpdate: Restrict, map: "diseases_ibfk_1")
   healtharticles      healtharticles[]
 
-  @@index([CategoryID], map: "CategoryID")
+  @@index([CategoryID], map: "diseases_CategoryID")
 }
 
 model feedbacks {
@@ -84,7 +84,7 @@ model feedbacks {
   HealthArticleID Int?
   healtharticles  healtharticles? @relation(fields: [HealthArticleID], references: [HealthArticleID], onDelete: Cascade, onUpdate: Restrict, map: "feedbacks_ibfk_1")
 
-  @@index([HealthArticleID])
+  @@index([HealthArticleID], map: "feedbacks_HealthArticleID")
 }
 
 model healtharticles {
@@ -103,10 +103,10 @@ model healtharticles {
   videolibrary    videolibrary?  @relation(fields: [VideoID], references: [VideoID], onUpdate: Restrict, map: "healtharticles_ibfk_3")
   admins          admins         @relation(fields: [AdminID], references: [AdminID], onUpdate: Restrict, map: "healtharticles_ibfk_4")
 
-  @@index([AdminID])
-  @@index([DiseaseID], map: "DiseaseID")
-  @@index([ImageID], map: "ImageID")
-  @@index([VideoID])
+  @@index([AdminID], map: "healtharticles_AdminID")
+  @@index([DiseaseID], map: "healtharticles_DiseaseID")
+  @@index([ImageID], map: "healtharticles_ImageID")
+  @@index([VideoID], map: "healtharticles_VideoID")
 }
 
 model imagelibrary {
@@ -158,9 +158,9 @@ model videoarticles {
   videolibrary   videolibrary @relation(fields: [VideoID], references: [VideoID], onUpdate: Restrict, map: "videoarticles_ibfk_1")
   admins         admins       @relation(fields: [AdminID], references: [AdminID], onUpdate: Restrict, map: "videoarticles_ibfk_2")
 
-  @@index([VideoID])
-  @@index([AdminID])
-  @@index([ImageID])
+  @@index([VideoID], map: "videoarticles_VideoID")
+  @@index([AdminID], map: "videoarticles_AdminID")
+  @@index([ImageID], map: "videoarticles_ImageID")
 }
 
 model videolibrary {
