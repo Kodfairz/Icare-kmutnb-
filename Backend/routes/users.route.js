@@ -80,7 +80,7 @@ export const userRoutes = new Elysia({ prefix: "/users" })
                 "role": admin.Role,
                 "isActive": admin.isActive
             }
-        }, 'secret', { expiresIn: '24h' }); // หมายเหตุ: ควรใช้ secret จาก .env
+        }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN });
 
         // ส่ง token และข้อมูลผู้ใช้กลับไป เพื่อนำไปเก็บไว้ใน cookie
         return {
